@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mkuzo Islamic Secondary School - Group Chat</title>
+  <style>
+    :root{
+      --forest-green:#1a4d2e;
+      --light-green:#4f9d69;
+      --teal:#40a892;
+      --cream:#f5f1e8;
+      --dark-text:#2c3e2c;
+      --light-bg:#e8f5e9;
+    }
+    html,body{height:100%;margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif}
+    body{background:linear-gradient(135deg,var(--light-bg) 0%, var(--cream) 100%);color:var(--dark-text);display:flex;align-items:center;justify-content:center;padding:16px}
+    .app{width:100%;max-width:1100px;background:white;border-radius:16px;box-shadow:0 8px 32px rgba(26,77,46,.15);overflow:hidden;border:2px solid var(--forest-green)}
+    header{background:var(--forest-green);color:white;padding:16px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+    .logo{width:60px;height:60px;background:white;border-radius:50%;padding:4px}
+    .logo img{width:100%;height:100%;object-fit:contain}
+    .brand{flex:1}
+    .brand h1{margin:0;font-size:20px;font-weight:700}
+    .brand p{margin:4px 0 0;font-size:13px;opacity:.9}
+    .login-section{background:var(--light-green);padding:12px 16px;border-radius:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .login-section label{font-size:13px;font-weight:600}
+    .login-section input,.login-section select{padding:8px 12px;border:none;border-radius:6px;font-size:14px}
+    .login-section button{padding:8px 16px;background:var(--teal);color:white;border:none;border-radius:6px;font-weight:600;cursor:pointer}
+    .login-section button:hover{background:#358f7d}
+    .container{display:grid;grid-template-columns:280px 1fr;min-height:550px}
+    .sidebar{background:var(--light-bg);border-right:2px solid var(--forest-green);padding:16px}
+    .user-info{background:white;padding:12px;border-radius:8px;margin-bottom:16px;border:1px solid var(--light-green)}
+    .user-info .name{font-weight:700;color:var(--forest-green);font-size:16px}
+    .user-info .role{font-size:12px;color:var(--light-green);text-transform:uppercase;font-weight:600}
+    .rooms{margin-top:16px}
+    .room-group{margin-bottom:20px}
+    .room-group-title{font-size:12px;font-weight:700;color:var(--forest-green);margin-bottom:8px;text-transform:uppercase}
+    .room{padding:10px 12px;border-radius:8px;cursor:pointer;margin-bottom:6px;background:white;border:1px solid transparent;transition:all .2s}
+    .room:hover{background:var(--cream);border-color:var(--light-green)}
+    .room.active{background:var(--teal);color:white;font-weight:600;border-color:var(--teal)}
+    main{padding:16px;display:flex;flex-direction:column;background:var(--cream)}
+    .chat-header{display:flex;justify-content:space-between;align-items:center;padding:12px;background:white;border-radius:8px;margin-bottom:12px;border:1px solid var(--light-green)}
+    .chat-header h2{margin:0;color:var(--forest-green);font-size:18px}
+    .online-count{font-size:13px;color:var(--light-green);font-weight:600}
+    .messages{flex:1;overflow:auto;padding:16px;background:white;border-radius:8px;border:1px solid var(--light-green);margin-bottom:12px}
+    .msg{margin-bottom:16px;display:flex;gap:10px;animation:fadeIn .3s}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .msg .avatar{min-width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--light-green),var(--teal));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px}
+    .msg .content{flex:1}
+    .msg .header{display:flex;gap:8px;align-items:baseline;margin-bottom:4px}
+    .msg .name{font-weight:700;color:var(--forest-green)}
+    .msg .role-badge{font-size:10px;background:var(--light-green);color:white;padding:2px 6px;border-radius:4px;text-transform:uppercase}
+    .msg .time{font-size:11px;color:#999;margin-left:auto}
+    .msg .text{color:var(--dark-text);line-height:1.5}
+    .composer{display:flex;gap:10px}
+    .composer input{flex:1;padding:12px;border-radius:8px;border:2px solid var(--light-green);font-size:14px}
+    .composer input:focus{outline:none;border-color:var(--teal)}
+    .composer button{padding:12px 24px;border-radius:8px;border:none;background:var(--forest-green);color:white;font-weight:700;cursor:pointer}
+    .composer button:hover{background:var(--light-green)}
+    footer{background:var(--forest-green);color:white;padding:12px 24px;text-align:center;font-size:12px}
+    .status{padding:8px;background:rgba(79,157,105,.1);border-radius:6px;margin-bottom:12px;font-size:13px;text-align:center}
+    .status.error{background:rgba(220,53,69,.1);color:#c82333}
+    .status.success{background:rgba(40,167,69,.1);color:#28a745}
+    @media (max-width:760px){.container{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo" title="Mkuzo Islamic Secondary School">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="50" r="48" fill="#1a4d2e" stroke="#4f9d69" stroke-width="2"/>
+          <path d="M30,45 L70,45 L70,65 L30,65 Z" fill="#40a892"/>
+          <circle cx="50" cy="30" r="8" fill="#4f9d69"/>
+          <text x="50" y="58" text-anchor="middle" fill="white" font-size="12" font-weight="bold">MISS</text>
+        </svg>
+      </div>
+      <div class="brand">
+        <h1>Mkuzo Islamic Secondary School</h1>
+        <p>Group Communication Platform - Songea, Ruvuma</p>
+      </div>
+      <div class="login-section" id="loginSection">
+        <label>Name:</label>
+        <input id="userName" type="text" placeholder="Your name" />
+        <label>Role:</label>
+        <select id="userRole">
+          <option value="student">Student</option>
+          <option value="parent">Parent</option>
+          <option value="teacher">Teacher</option>
+        </select>
+        <button id="loginBtn">Join Chat</button>
+      </div>
+    </header>
+
+    <div id="statusMsg" class="status" style="display:none"></div>
+
+    <div class="container">
+      <aside class="sidebar">
+        <div class="user-info" id="userInfo" style="display:none">
+          <div class="name" id="displayName">Guest</div>
+          <div class="role" id="displayRole">Not logged in</div>
+        </div>
+
+        <div class="rooms">
+          <div class="room-group">
+            <div class="room-group-title">📚 General</div>
+            <div class="room active" data-room="announcements">📢 Announcements</div>
+            <div class="room" data-room="general">💬 General Discussion</div>
+          </div>
+
+          <div class="room-group">
+            <div class="room-group-title">👨‍🎓 Students</div>
+            <div class="room" data-room="student-help">❓ Student Help</div>
+            <div class="room" data-room="assignments">📝 Assignments</div>
+          </div>
+
+          <div class="room-group">
+            <div class="room-group-title">👨‍👩‍👧 Parents</div>
+            <div class="room" data-room="parent-teacher">👪 Parent-Teacher</div>
+            <div class="room" data-room="parent-updates">📋 Parent Updates</div>
+          </div>
+
+          <div class="room-group">
+            <div class="room-group-title">👨‍🏫 Teachers</div>
+            <div class="room" data-room="staff-room">🏫 Staff Room</div>
+          </div>
+        </div>
+      </aside>
+
+      <main>
+        <div class="chat-header">
+          <h2 id="roomTitle">📢 Announcements</h2>
+          <div class="online-count">Online: <span id="onlineCount">0</span></div>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="composer">
+          <input id="textInput" type="text" placeholder="Type your message..." disabled />
+          <button id="sendBtn" disabled>Send</button>
+        </div>
+      </main>
+    </div>
+
+    <footer>
+      <strong>Mkuzo Islamic Secondary School</strong> - Read in the Name of Lord Who Created | 
+      <span id="sheetStatus">Google Sheets: Not Connected</span>
+    </footer>
+  </div>
+
+  <script>
+    // ===== CONFIGURATION =====
+    // Replace with your Google Apps Script Web App URL
+    const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+    
+    // ===== STATE =====
+    let currentUser = null;
+    let currentRoom = 'announcements';
+    let lastMessageId = 0;
+    let pollInterval = null;
+
+    // ===== DOM REFERENCES =====
+    const userName = document.getElementById('userName');
+    const userRole = document.getElementById('userRole');
+    const loginBtn = document.getElementById('loginBtn');
+    const userInfo = document.getElementById('userInfo');
+    const displayName = document.getElementById('displayName');
+    const displayRole = document.getElementById('displayRole');
+    const loginSection = document.getElementById('loginSection');
+    const messagesEl = document.getElementById('messages');
+    const textInput = document.getElementById('textInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const roomTitle = document.getElementById('roomTitle');
+    const rooms = document.querySelectorAll('.room');
+    const statusMsg = document.getElementById('statusMsg');
+    const sheetStatus = document.getElementById('sheetStatus');
+    const onlineCount = document.getElementById('onlineCount');
+
+    // ===== HELPER FUNCTIONS =====
+    function showStatus(msg, type = 'success') {
+      statusMsg.textContent = msg;
+      statusMsg.className = 'status ' + type;
+      statusMsg.style.display = 'block';
+      setTimeout(() => statusMsg.style.display = 'none', 3000);
+    }
+
+    function getInitials(name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function getRoleColor(role) {
+      const colors = {
+        student: '#4f9d69',
+        parent: '#40a892',
+        teacher: '#1a4d2e'
+      };
+      return colors[role] || '#4f9d69';
+    }
+
+    function formatTime(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // ===== GOOGLE SHEETS API =====
+    async function sendToSheets(action, data) {
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, ...data })
+        });
+        return { success: true };
+      } catch (error) {
+        console.error('Sheets error:', error);
+        showStatus('Connection error. Using local storage.', 'error');
+        return { success: false, error };
+      }
+    }
+
+    async function fetchFromSheets(action, params = {}) {
+      try {
+        const url = new URL(GOOGLE_SCRIPT_URL);
+        url.searchParams.append('action', action);
+        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+        
+        const response = await fetch(url.toString());
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Fetch error:', error);
+        return { success: false, error };
+      }
+    }
+
+    // ===== MESSAGE FUNCTIONS =====
+    function appendMessage(msg) {
+      if (msg.room !== currentRoom) return;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'msg';
+      
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.style.background = `linear-gradient(135deg, ${getRoleColor(msg.role)}, var(--teal))`;
+      avatar.textContent = getInitials(msg.from);
+      
+      const content = document.createElement('div');
+      content.className = 'content';
+      
+      const header = document.createElement('div');
+      header.className = 'header';
+      header.innerHTML = `
+        <span class="name">${escapeHtml(msg.from)}</span>
+        <span class="role-badge">${escapeHtml(msg.role)}</span>
+        <span class="time">${formatTime(msg.timestamp)}</span>
+      `;
+      
+      const text = document.createElement('div');
+      text.className = 'text';
+      text.textContent = msg.text;
+      
+      content.appendChild(header);
+      content.appendChild(text);
+      wrap.appendChild(avatar);
+      wrap.appendChild(content);
+      messagesEl.appendChild(wrap);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      
+      if (msg.id > lastMessageId) lastMessageId = msg.id;
+    }
+
+    async function sendMessage(text) {
+      if (!currentUser || !text.trim()) return;
+
+      const message = {
+        from: currentUser.name,
+        role: currentUser.role,
+        room: currentRoom,
+        text: text.trim(),
+        timestamp: Date.now()
+      };
+
+      // Send to Google Sheets
+      await sendToSheets('sendMessage', message);
+      
+      // Also save locally
+      const key = `chat_${currentRoom}`;
+      const messages = JSON.parse(localStorage.getItem(key) || '[]');
+      messages.push({ ...message, id: Date.now() });
+      if (messages.length > 100) messages.shift();
+      localStorage.setItem(key, JSON.stringify(messages));
+      
+      // Display immediately
+      appendMessage({ ...message, id: Date.now() });
+      
+      textInput.value = '';
+    }
+
+    async function loadMessages() {
+      messagesEl.innerHTML = '';
+      
+      // Try to load from Google Sheets first
+      const result = await fetchFromSheets('getMessages', { 
+        room: currentRoom,
+        after: 0 
+      });
+      
+      if (result.success && result.messages) {
+        result.messages.forEach(appendMessage);
+        sheetStatus.textContent = 'Google Sheets: Connected ✓';
+        sheetStatus.style.color = '#90EE90';
+      } else {
+        // Fallback to localStorage
+        const key = `chat_${currentRoom}`;
+        const messages = JSON.parse(localStorage.getItem(key) || '[]');
+        messages.forEach(appendMessage);
+        sheetStatus.textContent = 'Google Sheets: Local Mode';
+        sheetStatus.style.color = '#FFA500';
+      }
+    }
+
+    async function pollNewMessages() {
+      const result = await fetchFromSheets('getMessages', {
+        room: currentRoom,
+        after: lastMessageId
+      });
+      
+      if (result.success && result.messages) {
+        result.messages.forEach(appendMessage);
+      }
+    }
+
+    // ===== LOGIN/LOGOUT =====
+    function login() {
+      const name = userName.value.trim();
+      const role = userRole.value;
+      
+      if (!name) {
+        showStatus('Please enter your name', 'error');
+        return;
+      }
+
+      currentUser = { name, role };
+      localStorage.setItem('chatUser', JSON.stringify(currentUser));
+      
+      displayName.textContent = name;
+      displayRole.textContent = role;
+      userInfo.style.display = 'block';
+      loginSection.style.display = 'none';
+      
+      textInput.disabled = false;
+      sendBtn.disabled = false;
+      
+      showStatus(`Welcome, ${name}!`, 'success');
+      
+      // Start polling for new messages
+      pollInterval = setInterval(pollNewMessages, 5000);
+      
+      // Send join notification
+      sendToSheets('userJoin', { name, role, room: currentRoom });
+    }
+
+    // ===== EVENT LISTENERS =====
+    loginBtn.addEventListener('click', login);
+    
+    userName.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') login();
+    });
+
+    sendBtn.addEventListener('click', () => {
+      if (textInput.value.trim()) {
+        sendMessage(textInput.value);
+      }
+    });
+
+    textInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendBtn.click();
+    });
+
+    rooms.forEach(room => {
+      room.addEventListener('click', () => {
+        rooms.forEach(r => r.classList.remove('active'));
+        room.classList.add('active');
+        currentRoom = room.getAttribute('data-room');
+        roomTitle.textContent = room.textContent;
+        loadMessages();
+      });
+    });
+
+    // ===== INITIALIZATION =====
+    const savedUser = localStorage.getItem('chatUser');
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+      userName.value = currentUser.name;
+      userRole.value = currentUser.role;
+      login();
+    }
+
+    loadMessages();
+    
+    // Update online count (simulated)
+    setInterval(() => {
+      onlineCount.textContent = Math.floor(Math.random() * 5) + 1;
+    }, 10000);
+  </script>
+</body>
+</html>

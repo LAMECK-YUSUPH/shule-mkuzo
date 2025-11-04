@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mkuzo School — Group Chat</title>
+
+  <style>
+    /* Color palette inspired by logo */
+    :root{
+      --dark-green: #0f4d2f;   /* deep ring */
+      --mid-green:  #2e8b57;   /* lighter green */
+      --accent-cyan: #06b6d4;  /* book cyan */
+      --soft-green: #a8d08d;   /* light green */
+      --bg: #f6f8f7;
+      --card: #ffffff;
+      --muted: #4b5563;
+      --text: #0b1720;
+    }
+
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;background:linear-gradient(180deg,#f0f6f2 0%, #eaf1ea 100%);color:var(--text)}
+    .app{width:100%;max-width:1100px;margin:28px auto;border-radius:12px;overflow:hidden;box-shadow:0 18px 50px rgba(11,17,14,.12);background:linear-gradient(180deg,var(--card),#f8fdf8)}
+    header{display:flex;align-items:center;gap:14px;padding:18px 20px;border-bottom:4px solid var(--soft-green)}
+    .logo {
+      width:60px;height:60px;border-radius:8px;background:linear-gradient(180deg,var(--mid-green),var(--dark-green));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;
+      box-shadow: inset 0 -6px 18px rgba(0,0,0,0.12);
+    }
+    h1{font-size:18px;margin:0}
+    .sub{font-size:13px;color:var(--muted)}
+    .controls{margin-left:auto;display:flex;gap:10px;align-items:center}
+
+    .container{display:grid;grid-template-columns:300px 1fr;min-height:560px}
+    .sidebar{padding:14px;border-right:1px solid #e6efe6}
+    .profile{display:flex;gap:10px;align-items:center;margin-bottom:12px}
+    .avatar{width:54px;height:54px;border-radius:8px;background:linear-gradient(135deg,var(--accent-cyan),var(--mid-green));display:flex;align-items:center;justify-content:center;font-weight:800;color:#042427}
+    label{display:flex;flex-direction:column;font-size:13px}
+    input[type=text], select{padding:8px;border-radius:8px;border:1px solid #e4efe4;background:transparent;font-size:13px}
+    .rooms{margin-top:16px}
+    .room{padding:10px;border-radius:8px;cursor:pointer;margin-bottom:8px;background:transparent;display:flex;justify-content:space-between;align-items:center}
+    .room.active{background:linear-gradient(90deg, rgba(46,139,87,0.06), rgba(6,182,212,0.03)); border:1px solid rgba(46,139,87,0.08)}
+    .role-badge{font-size:12px;padding:4px 8px;border-radius:20px;background:rgba(6,182,212,0.08);color:var(--accent-cyan)}
+
+    main{display:flex;flex-direction:column;padding:14px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .messages{flex:1;overflow:auto;padding:12px;border-radius:8px;background:linear-gradient(180deg,#ffffff, #f4faf4);border:1px solid #f0f7f0}
+    .msg{margin-bottom:12px;display:flex;gap:12px}
+    .msg .who{width:64px;font-weight:700;color:var(--mid-green)}
+    .bubble{padding:10px;border-radius:10px;background:#ffffff;border:1px solid #eef8ee;box-shadow:0 6px 18px rgba(13,30,18,0.04);max-width:72%}
+    .bubble .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .composer{display:flex;gap:8px;padding-top:10px}
+    .composer input{flex:1;padding:12px;border-radius:10px;border:1px solid #e8f5e8;background:transparent}
+    .btn{padding:10px 14px;border-radius:10px;border:none;background:var(--dark-green);color:#fff;font-weight:700;cursor:pointer}
+    .btn.secondary{background:var(--accent-cyan);color:#042427}
+
+    footer{padding:10px 14px;border-top:1px solid #eef8ef;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+
+    @media (max-width:880px){ .container{grid-template-columns:1fr} .sidebar{order:2} main{order:1} .who{display:none} }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Mkuzo group chat">
+    <header>
+      <div class="logo">M</div>
+      <div>
+        <h1>Mkuzo Islamic Secondary — Group Chat</h1>
+        <div class="sub">Read in the name of the Lord who created — Songwe, Ruvuma</div>
+      </div>
+
+      <div class="controls">
+        <div>
+          <label>Role
+            <select id="roleSelect">
+              <option value="Parent">Parent</option>
+              <option value="Student">Student</option>
+              <option value="Teacher">Teacher</option>
+              <option value="Staff">Staff</option>
+            </select>
+          </label>
+        </div>
+        <div>
+          <label>Your name
+            <input id="username" type="text" placeholder="e.g. Amina" />
+          </label>
+        </div>
+        <button id="notifyBtn" class="btn secondary">Enable Notifications</button>
+      </div>
+    </header>
+
+    <div class="container">
+      <aside class="sidebar">
+        <div class="profile">
+          <div class="avatar" id="avatar">G</div>
+          <div>
+            <div id="displayName">Guest</div>
+            <div class="sub">Connected to Google Sheets</div>
+          </div>
+        </div>
+
+        <div class="rooms">
+          <div class="room active" data-room="general"># general <span class="role-badge">All</span></div>
+          <div class="room" data-room="announcements"># announcements <span class="role-badge">School</span></div>
+          <div class="room" data-room="students"># students <span class="role-badge">Students</span></div>
+          <div class="room" data-room="parents"># parents <span class="role-badge">Parents</span></div>
+          <div class="room" data-room="teachers"># teachers <span class="role-badge">Teachers</span></div>
+        </div>
+
+        <hr style="margin:12px 0;border:none;border-top:1px solid #eef9ef" />
+        <div style="font-size:13px;color:var(--muted)">Open this page on other devices to see messages across devices (polling to Google Sheets every 2s).</div>
+      </aside>
+
+      <main>
+        <div class="topbar">
+          <div id="roomTitle"># general</div>
+          <div class="sub">Unread: <span id="unread">0</span></div>
+        </div>
+
+        <div class="messages" id="messages" tabindex="0" aria-live="polite"></div>
+
+        <div class="composer" role="form">
+          <input id="textInput" type="text" placeholder="Type your message..." aria-label="Message input" />
+          <button id="sendBtn" class="btn">Send</button>
+        </div>
+      </main>
+    </div>
+
+    <footer>
+      <div>Messages stored in Google Sheet (for admin access, open the sheet).</div>
+      <div class="sub">Local time: <span id="timeNow"></span></div>
+    </footer>
+  </div>
+
+<script>
+/* === CONFIG === */
+const GSHEET_URL = 'YOUR_WEB_APP_URL'; // <<-- Replace with your Apps Script web app URL (ends with /exec)
+const POLL_INTERVAL_MS = 2000;
+
+/* === UI refs === */
+const usernameInput = document.getElementById('username');
+const roleSelect = document.getElementById('roleSelect');
+const avatarEl = document.getElementById('avatar');
+const displayNameEl = document.getElementById('displayName');
+const messagesEl = document.getElementById('messages');
+const textInput = document.getElementById('textInput');
+const sendBtn = document.getElementById('sendBtn');
+const notifyBtn = document.getElementById('notifyBtn');
+const unreadEl = document.getElementById('unread');
+const roomTitle = document.getElementById('roomTitle');
+const rooms = document.querySelectorAll('.room');
+
+let currentRoom = 'general';
+let lastTsByRoom = {}; // track last timestamp fetched per room
+let unread = 0;
+let bc = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('mkuzo-chat') : null;
+
+/* === initialize === */
+usernameInput.value = localStorage.getItem('mkuzo_name') || '';
+roleSelect.value = localStorage.getItem('mkuzo_role') || 'Parent';
+setName(usernameInput.value || 'Guest');
+
+function updateTime(){ document.getElementById('timeNow').textContent = new Date().toLocaleString(); }
+setInterval(updateTime,1000); updateTime();
+
+/* === helpers === */
+function setName(name){
+  const short = name ? name.trim().split(' ').map(s=>s[0].toUpperCase()).slice(0,2).join('') : 'G';
+  avatarEl.textContent = short || 'G';
+  displayNameEl.textContent = name || 'Guest';
+  localStorage.setItem('mkuzo_name', name || 'Guest');
+}
+
+function escapeHtml(s){ return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+function appendMessage(msg){
+  // msg: {time, iso, room, from, role, text}
+  if(msg.room !== currentRoom) return;
+  const wrap = document.createElement('div'); wrap.className = 'msg';
+  const who = document.createElement('div'); who.className = 'who'; who.innerHTML = `<div>${escapeHtml(msg.from)}</div><div style="font-size:12px;color:#7b9f82">${escapeHtml(msg.role||'')}</div>`;
+  const bubble = document.createElement('div'); bubble.className = 'bubble';
+  bubble.innerHTML = `<div class="meta">${new Date(Number(msg.time)).toLocaleString()}</div><div>${escapeHtml(msg.text)}</div>`;
+  wrap.appendChild(who); wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+/* === notify === */
+function notifyIfNeeded(from, text){
+  if(document.hidden && Notification.permission === 'granted'){
+    const n = new Notification(`${from} — new message`, {body: text});
+    setTimeout(()=>n.close(),5000);
+  } else if(document.hidden){
+    unread++; unreadEl.textContent = unread;
+  }
+}
+
+/* === fetch new messages (poll) === */
+async function fetchMessages(room) {
+  try {
+    const since = lastTsByRoom[room] || 0;
+    const url = new URL(GSHEET_URL);
+    url.searchParams.set('action','read');
+    url.searchParams.set('room', room);
+    url.searchParams.set('since', String(since));
+    const res = await fetch(url.toString(), {method:'GET'});
+    const data = await res.json();
+    if (data && Array.isArray(data.messages)) {
+      // messages are returned in sheet order; append and update lastTs
+      data.messages.forEach(m => {
+        appendMessage(m);
+        notifyIfNeeded(m.from, m.text);
+        lastTsByRoom[room] = Math.max(lastTsByRoom[room] || 0, Number(m.time || 0));
+      });
+    }
+  } catch (err) {
+    console.warn('fetchMessages err', err);
+  }
+}
+
+/* poller */
+let poller = null;
+function startPoller(){
+  if(poller) clearInterval(poller);
+  poller = setInterval(()=> fetchMessages(currentRoom), POLL_INTERVAL_MS);
+  // immediate fetch
+  fetchMessages(currentRoom);
+}
+
+/* === send message === */
+async function sendMessage(text){
+  const from = usernameInput.value.trim() || 'Guest';
+  const role = roleSelect.value || 'Parent';
+  const payload = {action:'write', room: currentRoom, from, role, text};
+  try {
+    const res = await fetch(GSHEET_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    // broadcast to other tabs (fast)
+    if (bc) bc.postMessage({type:'message', room:currentRoom, from, role, text, time: data.time || Date.now()});
+    // show locally (we will also fetch on next poll but show instantly)
+    appendMessage({time: data.time || Date.now(), iso: new Date().toISOString(), room: currentRoom, from, role, text});
+    lastTsByRoom[currentRoom] = Math.max(lastTsByRoom[currentRoom] || 0, Number(data.time || Date.now()));
+  } catch (err) {
+    console.error('sendMessage error', err);
+    alert('Failed to send message — check console and your Apps Script deployment URL.');
+  }
+}
+
+/* == UI events == */
+sendBtn.addEventListener('click', ()=> {
+  if(textInput.value.trim() === '') return;
+  sendMessage(textInput.value.trim());
+  textInput.value = ''; textInput.focus();
+});
+textInput.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); sendBtn.click(); }});
+
+usernameInput.addEventListener('change', ()=> setName(usernameInput.value));
+roleSelect.addEventListener('change', ()=> localStorage.setItem('mkuzo_role', roleSelect.value));
+
+notifyBtn.addEventListener('click', async ()=> {
+  if(!('Notification' in window)) return alert('Notifications not supported');
+  if(Notification.permission === 'default') {
+    const perm = await Notification.requestPermission();
+    if(perm === 'granted') alert('Notifications enabled');
+  } else if(Notification.permission === 'granted') {
+    alert('Notifications already enabled');
+  } else {
+    alert('Notifications blocked — enable in browser settings');
+  }
+});
+
+/* room switching */
+rooms.forEach(r => r.addEventListener('click', ()=> {
+  rooms.forEach(x => x.classList.remove('active'));
+  r.classList.add('active');
+  currentRoom = r.getAttribute('data-room');
+  roomTitle.textContent = '# ' + currentRoom;
+  unread = 0; unreadEl.textContent = unread;
+  messagesEl.innerHTML = '';
+  startPoller();
+}));
+
+/* BroadcastChannel receive */
+if (bc) {
+  bc.onmessage = ev => {
+    const m = ev.data;
+    if(m && m.type === 'message' && m.room === currentRoom){
+      appendMessage(m);
+      notifyIfNeeded(m.from, m.text);
+      lastTsByRoom[currentRoom] = Math.max(lastTsByRoom[currentRoom] || 0, Number(m.time || Date.now()));
+    }
+  };
+}
+
+/* clear unread on focus */
+document.addEventListener('visibilitychange', ()=> { if(!document.hidden){ unread = 0; unreadEl.textContent = unread; } });
+
+/* initial load */
+startPoller();
+textInput.focus();
+
+</script>
+</body>
+</html>
